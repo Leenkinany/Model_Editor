@@ -13,7 +13,7 @@ namespace Editor.Engine
         public Camera GetCamera() { return m_camera; }
 
         private List<Models> m_models = new();
-        private Camera m_camera = new(new Vector3(0,0,300), 16/9);
+        private Camera m_camera = new(new Vector3(0,0,300), 16f/9f);
 
         public Level()
         { }
@@ -47,6 +47,9 @@ namespace Editor.Engine
             foreach (var model in m_models)
             {
                 model.Serialize(_stream);
+
+                int parentIndex = model.Parent != null ? m_models.IndexOf(model.Parent) : -1;
+                _stream.Write(parentIndex);
             }
             m_camera.Serialize(_stream);
         }
@@ -54,11 +57,22 @@ namespace Editor.Engine
         public void Deserialize(BinaryReader _stream, ContentManager _content)
         {
             int modelCount = _stream.ReadInt32();
+            List<int> parentIndices = new();
             for (int i = 0; i < modelCount; i++)
             {
                 Models model = new();
                 model.Deserialize(_stream, _content);
                 m_models.Add(model);
+                int parentIndex = _stream.ReadInt32();
+                parentIndices.Add(parentIndex);
+            }
+            for (int i = 0; i < modelCount; i++)
+            {
+                int parentIndex = parentIndices[i];
+                if (parentIndex >= 0 && parentIndex < m_models.Count)
+                {
+                    m_models[i].Parent=m_models[parentIndex];
+                }
             }
             m_camera.Deserialize(_stream, _content);
         }
@@ -74,7 +88,7 @@ namespace Editor.Engine
             if (countSun >= 1)
                 return;
 
-            Models Sun = new(content,"Sphere","SunDiffuse","MyShader",Vector3.Zero,2.0f);
+            Models Sun = new(content,"Sun","SunDiffuse","MyShader",Vector3.Zero,2.0f);
             Sun.RotationSpeed = 0.005f;
 
             AddModel(Sun);
@@ -106,14 +120,14 @@ namespace Editor.Engine
 
             // Random starting position
             Vector3 randPos = new(
-                s_random.Next(-150, 150),
-                s_random.Next(-90, 90),
+                s_random.Next(-150, 151),
+                s_random.Next(-90, 91),
                 0
             );
 
             Models Planet = new(
                 content,
-                "Sphere",
+                "World",
                 "WorldDiffuse",
                 "MyShader",
                 randPos,
@@ -160,7 +174,7 @@ namespace Editor.Engine
 
                 float randomScale = 0.2f +(float)s_random.NextDouble() * 0.2f;
 
-                Models Moon = new(content,"Sphere","MoonDiffuse","MyShader",moonPosition,randomScale);
+                Models Moon = new(content,"Moon","MoonDiffuse","MyShader",moonPosition,randomScale);
                 Moon.SetParent(world);
                 Moon.RotationSpeed = 0.005f +(float)s_random.NextDouble() * 0.005f;
                 Moon.OrbitSpeed = 0.01f +(float)s_random.NextDouble() * 0.01f;

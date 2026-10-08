@@ -98,6 +98,11 @@ namespace Editor.Engine
             HelperSerialize.Vec3(_stream, Position);
             HelperSerialize.Vec3(_stream, Rotation);
             _stream.Write(Scale);
+
+            _stream.Write(RotationSpeed);
+            _stream.Write(OrbitSpeed);
+            _stream.Write(OrbitAngle);
+            _stream.Write(OrbitRadius);
         }
 
         public void Deserialize(BinaryReader _stream, ContentManager _content)
@@ -108,6 +113,12 @@ namespace Editor.Engine
             Position = HelperDeserialize.Vec3(_stream);
             Rotation = HelperDeserialize.Vec3(_stream);
             Scale = _stream.ReadSingle();
+
+            RotationSpeed = _stream.ReadSingle();
+            OrbitSpeed = _stream.ReadSingle();
+            OrbitAngle = _stream.ReadSingle();
+            OrbitRadius = _stream.ReadSingle();
+
             Create(_content, mesh, texture, shader, Position, Scale);
         }
 
@@ -134,12 +145,12 @@ namespace Editor.Engine
         {
             Parent = parent;
 
-            OrbitRadius = Vector3.Distance(Position, Parent.Position);
+            float x = Position.X - Parent.Position.X;
+            float z = Position.Z - Parent.Position.Z;
 
-            OrbitAngle = (float)Math.Atan2(
-                Position.Z - Parent.Position.Z,
-                Position.X - Parent.Position.X
-            );
+            OrbitRadius = (float)Math.Sqrt(x * x + z * z);
+
+            OrbitAngle = (float)Math.Atan2(z, x);
         }
     }
 }
