@@ -2,6 +2,7 @@
 using Editor.Engine.Interfaces;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
 
 namespace Editor.Engine
 {
@@ -14,6 +15,7 @@ namespace Editor.Engine
         public float NearPlane { get; set; } = 0.1f;
         public float FarPlane { get; set; } = 1000f;
         public float AspectRatio { get; set; } = 16f / 9f;
+        public Viewport viewport { get; set; }
 
         public Camera() { }
         public Camera(Vector3 _position, float aspectRatio)
@@ -31,7 +33,6 @@ namespace Editor.Engine
                                                                 NearPlane,
                                                                 FarPlane);
         }
-
 
         public void Translate (Vector3 _translate)
         {

@@ -10,6 +10,9 @@
 matrix World;
 matrix WorldViewProjection;
 texture Texture;
+matrix View;
+matrix projection;
+bool Tint;
 
 sampler BasicTextureSampler = sampler_state
 {
@@ -40,7 +43,9 @@ VertexShaderOutput MainVS(in VertexShaderInput input)
 
 float4 MainPS(VertexShaderOutput input) : COLOR
 {
-    return tex2D(BasicTextureSampler, input.UV);
+    float3 output = tex2D(BasicTextureSampler, input.UV);
+    if (Tint) output.r =1;
+    return float4(output, 1);
 }
 
 technique BasicColorDrawing
