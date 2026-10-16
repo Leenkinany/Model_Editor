@@ -90,17 +90,17 @@ namespace GUI.Editor
 
         private void createToolStripMenuItem1_Click(object sender, EventArgs e)
         {
-            
+
         }
 
         private void saveToolStripMenuItem1_Click(object sender, EventArgs e)
         {
-            
+
         }
 
         private void loadToolStripMenuItem1_Click(object sender, EventArgs e)
         {
-            
+
         }
 
         private void exitToolStripMenuItem1_Click(object sender, EventArgs e)
@@ -141,6 +141,11 @@ namespace GUI.Editor
                 Text = "Our Cool Editor - " + Game.Project.Name;
                 Game.AdjustAspectRatio();
             }
+        }
+
+        private void propertyGrid_Click(object sender, EventArgs e)
+        {
+
         }
     }
 }

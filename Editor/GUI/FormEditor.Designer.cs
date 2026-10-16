@@ -31,6 +31,10 @@
             menuStrip1 = new System.Windows.Forms.MenuStrip();
             fileToolStripMenuItem1 = new System.Windows.Forms.ToolStripMenuItem();
             exitToolStripMenuItem1 = new System.Windows.Forms.ToolStripMenuItem();
+            projectToolStripMenuItem1 = new System.Windows.Forms.ToolStripMenuItem();
+            createToolStripMenuItem1 = new System.Windows.Forms.ToolStripMenuItem();
+            saveToolStripMenuItem1 = new System.Windows.Forms.ToolStripMenuItem();
+            loadToolStripMenuItem1 = new System.Windows.Forms.ToolStripMenuItem();
             exitToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             fileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             projectToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -40,13 +44,11 @@
             statusStrip1 = new System.Windows.Forms.StatusStrip();
             toolStripStatusLabel1 = new System.Windows.Forms.ToolStripStatusLabel();
             splitContainer = new System.Windows.Forms.SplitContainer();
-            projectToolStripMenuItem1 = new System.Windows.Forms.ToolStripMenuItem();
-            createToolStripMenuItem1 = new System.Windows.Forms.ToolStripMenuItem();
-            saveToolStripMenuItem1 = new System.Windows.Forms.ToolStripMenuItem();
-            loadToolStripMenuItem1 = new System.Windows.Forms.ToolStripMenuItem();
+            propertyGrid = new System.Windows.Forms.PropertyGrid();
             menuStrip1.SuspendLayout();
             statusStrip1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)splitContainer).BeginInit();
+            splitContainer.Panel2.SuspendLayout();
             splitContainer.SuspendLayout();
             SuspendLayout();
             // 
@@ -70,9 +72,37 @@
             // exitToolStripMenuItem1
             // 
             exitToolStripMenuItem1.Name = "exitToolStripMenuItem1";
-            exitToolStripMenuItem1.Size = new System.Drawing.Size(224, 26);
+            exitToolStripMenuItem1.Size = new System.Drawing.Size(138, 26);
             exitToolStripMenuItem1.Text = "Exit";
             exitToolStripMenuItem1.Click += exitToolStripMenuItem1_Click;
+            // 
+            // projectToolStripMenuItem1
+            // 
+            projectToolStripMenuItem1.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] { createToolStripMenuItem1, saveToolStripMenuItem1, loadToolStripMenuItem1 });
+            projectToolStripMenuItem1.Name = "projectToolStripMenuItem1";
+            projectToolStripMenuItem1.Size = new System.Drawing.Size(138, 26);
+            projectToolStripMenuItem1.Text = "Project";
+            // 
+            // createToolStripMenuItem1
+            // 
+            createToolStripMenuItem1.Name = "createToolStripMenuItem1";
+            createToolStripMenuItem1.Size = new System.Drawing.Size(135, 26);
+            createToolStripMenuItem1.Text = "Create";
+            createToolStripMenuItem1.Click += createToolStripMenuItem1_Click_1;
+            // 
+            // saveToolStripMenuItem1
+            // 
+            saveToolStripMenuItem1.Name = "saveToolStripMenuItem1";
+            saveToolStripMenuItem1.Size = new System.Drawing.Size(135, 26);
+            saveToolStripMenuItem1.Text = "Save";
+            saveToolStripMenuItem1.Click += saveToolStripMenuItem1_Click_1;
+            // 
+            // loadToolStripMenuItem1
+            // 
+            loadToolStripMenuItem1.Name = "loadToolStripMenuItem1";
+            loadToolStripMenuItem1.Size = new System.Drawing.Size(135, 26);
+            loadToolStripMenuItem1.Text = "Load";
+            loadToolStripMenuItem1.Click += loadToolStripMenuItem1_Click_1;
             // 
             // exitToolStripMenuItem
             // 
@@ -135,37 +165,23 @@
             // splitContainer.Panel1
             // 
             splitContainer.Panel1.SizeChanged += splitContainer_Panel1_SizeChanged;
+            // 
+            // splitContainer.Panel2
+            // 
+            splitContainer.Panel2.Controls.Add(propertyGrid);
             splitContainer.Size = new System.Drawing.Size(800, 396);
             splitContainer.SplitterDistance = 586;
             splitContainer.TabIndex = 2;
             // 
-            // projectToolStripMenuItem1
+            // propertyGrid
             // 
-            projectToolStripMenuItem1.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] { createToolStripMenuItem1, saveToolStripMenuItem1, loadToolStripMenuItem1 });
-            projectToolStripMenuItem1.Name = "projectToolStripMenuItem1";
-            projectToolStripMenuItem1.Size = new System.Drawing.Size(224, 26);
-            projectToolStripMenuItem1.Text = "Project";
-            // 
-            // createToolStripMenuItem1
-            // 
-            createToolStripMenuItem1.Name = "createToolStripMenuItem1";
-            createToolStripMenuItem1.Size = new System.Drawing.Size(224, 26);
-            createToolStripMenuItem1.Text = "Create";
-            createToolStripMenuItem1.Click += createToolStripMenuItem1_Click_1;
-            // 
-            // saveToolStripMenuItem1
-            // 
-            saveToolStripMenuItem1.Name = "saveToolStripMenuItem1";
-            saveToolStripMenuItem1.Size = new System.Drawing.Size(224, 26);
-            saveToolStripMenuItem1.Text = "Save";
-            saveToolStripMenuItem1.Click += saveToolStripMenuItem1_Click_1;
-            // 
-            // loadToolStripMenuItem1
-            // 
-            loadToolStripMenuItem1.Name = "loadToolStripMenuItem1";
-            loadToolStripMenuItem1.Size = new System.Drawing.Size(224, 26);
-            loadToolStripMenuItem1.Text = "Load";
-            loadToolStripMenuItem1.Click += loadToolStripMenuItem1_Click_1;
+            propertyGrid.BackColor = System.Drawing.SystemColors.Control;
+            propertyGrid.Dock = System.Windows.Forms.DockStyle.Fill;
+            propertyGrid.Location = new System.Drawing.Point(0, 0);
+            propertyGrid.Name = "propertyGrid";
+            propertyGrid.Size = new System.Drawing.Size(210, 396);
+            propertyGrid.TabIndex = 0;
+            propertyGrid.Click += propertyGrid_Click;
             // 
             // FormEditor
             // 
@@ -184,6 +200,7 @@
             menuStrip1.PerformLayout();
             statusStrip1.ResumeLayout(false);
             statusStrip1.PerformLayout();
+            splitContainer.Panel2.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)splitContainer).EndInit();
             splitContainer.ResumeLayout(false);
             ResumeLayout(false);
@@ -208,5 +225,6 @@
         private System.Windows.Forms.ToolStripMenuItem createToolStripMenuItem1;
         private System.Windows.Forms.ToolStripMenuItem saveToolStripMenuItem1;
         private System.Windows.Forms.ToolStripMenuItem loadToolStripMenuItem1;
+        public System.Windows.Forms.PropertyGrid propertyGrid;
     }
 }   
