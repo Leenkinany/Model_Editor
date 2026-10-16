@@ -13,6 +13,38 @@
 
 #---------------------------------- Content ---------------------------------#
 
+#begin Arial16.spritefont
+/importer:FontDescriptionImporter
+/processor:FontDescriptionProcessor
+/processorParam:PremultiplyAlpha=True
+/processorParam:TextureFormat=Compressed
+/processorParam:Version=3.8.5.1
+/build:Arial16.spritefont
+
+#begin Arial18.fx
+/importer:EffectImporter
+/processor:EffectProcessor
+/processorParam:DebugMode=Auto
+/processorParam:Defines=
+/processorParam:Version=3.8.5.1
+/build:Arial18.fx
+
+#begin Arial18.spritefont
+/importer:FontDescriptionImporter
+/processor:FontDescriptionProcessor
+/processorParam:PremultiplyAlpha=True
+/processorParam:TextureFormat=Compressed
+/processorParam:Version=3.8.5.1
+/build:Arial18.spritefont
+
+#begin Arial20.spritefont
+/importer:FontDescriptionImporter
+/processor:FontDescriptionProcessor
+/processorParam:PremultiplyAlpha=True
+/processorParam:TextureFormat=Compressed
+/processorParam:Version=3.8.5.1
+/build:Arial20.spritefont
+
 #begin Metal.jpg
 /importer:TextureImporter
 /processor:TextureProcessor
@@ -151,7 +183,7 @@
 /processorParam:PremultiplyTextureAlpha=True
 /processorParam:PremultiplyVertexColors=True
 /processorParam:ResizeTexturesToPowerOfTwo=False
-/processorParam:RotationX=0
+/processorParam:RotationX=-90
 /processorParam:RotationY=0
 /processorParam:RotationZ=0
 /processorParam:Scale=1

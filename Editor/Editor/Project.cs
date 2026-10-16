@@ -3,6 +3,7 @@ using Editor.Engine.Interfaces;
 using Microsoft.Xna.Framework.Content;
 using System.Collections.Generic;
 using System.IO;
+using System.Runtime.InteropServices;
 
 namespace Editor   
 {
@@ -24,7 +25,6 @@ namespace Editor
                 Name += ".oce";
             }
             AddLevel(_content);
-
         }
 
         public void AddLevel(ContentManager _content)
@@ -34,6 +34,10 @@ namespace Editor
             Levels.Add(CurrentLevel);
         }
 
+        public void Update(float _delta)
+        {
+            CurrentLevel?.Update(_delta);
+        }
         public void Render()
         {
             CurrentLevel.Render();
