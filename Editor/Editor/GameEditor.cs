@@ -67,22 +67,35 @@ namespace Editor
         }
 
         protected override void Draw(GameTime gameTime)
-        {
-            GraphicsDevice.Clear(Color.CornflowerBlue);
+{
+    GraphicsDevice.Clear(Color.CornflowerBlue);
 
-            if (Project != null)
-            {
-                GraphicsDevice.RasterizerState = m_rasterState;
-                GraphicsDevice.DepthStencilState = m_depthStencilState;
-                Project.Render();
-                m_spriteBatch.Begin();
-                m_fonts.Draw(m_spriteBatch, 20, InputController.Instance.ToString(), new Vector2(20, 20), Color.White);
-                m_fonts.Draw(m_spriteBatch, 16, Project.CurrentLevel.ToString(), new Vector2(20, 80), Color.Yellow);
-                m_spriteBatch.End();
-            }
+    if (Project != null)
+    {
+        GraphicsDevice.DepthStencilState = DepthStencilState.Default;
+        GraphicsDevice.RasterizerState = m_rasterState;
+        GraphicsDevice.SamplerStates[0] = SamplerState.LinearWrap;
 
-            base.Draw(gameTime);
-        }
+        Project.Render();
+
+        m_spriteBatch.Begin();
+        m_fonts.Draw(
+            m_spriteBatch, 20,
+            InputController.Instance.ToString(),
+            new Vector2(20, 20),
+            Color.White
+        );
+        m_fonts.Draw(
+            m_spriteBatch, 16,
+            Project.CurrentLevel.ToString(),
+            new Vector2(20, 80),
+            Color.Yellow
+        );
+        m_spriteBatch.End();
+    }
+
+    base.Draw(gameTime);
+}
 
         public void AdjustAspectRatio()
         {

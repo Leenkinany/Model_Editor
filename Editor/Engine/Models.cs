@@ -98,6 +98,7 @@ namespace Editor.Engine
 
             foreach(ModelMesh mesh in Mesh.Meshes)
             {
+
                 mesh.Draw();
             }
         }
