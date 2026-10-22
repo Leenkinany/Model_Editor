@@ -3,29 +3,48 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
 using System.IO;
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
 
 namespace Editor.Engine
 {
-    class Models : Iserializable
+    class Models : Iserializable, INotifyPropertyChanged
     {
+        [Browsable(false)]
         public Model Mesh { get; set; }
+
+        [Browsable(false)]
         public Texture Texture { get; set; }
+        
+
+        [Browsable(false)]
         public Effect Shader { get; set; }
-        public Vector3 Position { get=> m_position; set{ m_position = value; } }
-        public Vector3 Rotation { get=>m_rotation; set{ m_rotation = value; } }
-        public float Scale { get; set; }
-        public bool Selected { get; set; } = false;
+        
+        [Category("Appearance")]
+        [Description("Diffuse texture of the model.")]
+        [ReadOnly(true)]
+        public string DiffuseTexture
+        {
+            get => Texture?.Tag?.ToString() ?? "";
+        }
+
+        [Category("State")]
+        [Description("Selection status.")]
+        public bool Selected { get; set; }
 
         private Vector3 m_position;
-        private Vector3 m_rotation;
+        private Vector3 m_rotation; 
+        private float m_scale;
+        private ContentManager m_content;
+        public event PropertyChangedEventHandler PropertyChanged;
 
         public Models() { }
 
         public Models(ContentManager content,
-            string _model, 
-            string _texture, 
-            string _effect, 
-            Vector3 _position, 
+            string _model,
+            string _texture,
+            string _effect,
+            Vector3 _position,
             float _scale)
         {
             Create(content, _model, _texture, _effect, _position, _scale);
@@ -38,6 +57,7 @@ namespace Editor.Engine
             Vector3 _position,
             float _scale)
         {
+
             Mesh = content.Load<Model>(_model);
             Mesh.Tag = _model;
 
@@ -50,6 +70,7 @@ namespace Editor.Engine
             SetShader(Shader);
             Position = _position;
             Scale = _scale;
+
         }
         public void SetShader(Effect _effect)
         {
@@ -77,7 +98,7 @@ namespace Editor.Engine
             Position += forward * _translate.Z * 100f;
         }
 
-        public void Rotate (Vector3 _rotate)
+        public void Rotate(Vector3 _rotate)
         {
             Rotation += _rotate;
         }
@@ -96,7 +117,7 @@ namespace Editor.Engine
             Shader.Parameters["Texture"].SetValue(Texture);
             Shader.Parameters["Tint"].SetValue(Selected);
 
-            foreach(ModelMesh mesh in Mesh.Meshes)
+            foreach (ModelMesh mesh in Mesh.Meshes)
             {
 
                 mesh.Draw();
@@ -126,6 +147,62 @@ namespace Editor.Engine
             Create(_content, mesh, texture, shader, Position, Scale);
         }
 
+        
+
+        protected void OnPropertyChanged(
+            [CallerMemberName] string propertyName = null)
+        {
+            PropertyChanged?.Invoke(
+                this,
+                new PropertyChangedEventArgs(propertyName));
+        }
+
+        [Category("Transformation")]
+        [Description("Position of the model in world space.")]
+        public Vector3 Position
+        {
+            get => m_position;
+            set
+            {
+                if (m_position != value)
+                {
+                    m_position = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        [Category("Transformation")]
+        [Description("Rotation of the model.")]
+        public Vector3 Rotation
+        {
+            get => m_rotation;
+            set
+            {
+                if (m_rotation != value)
+                {
+                    m_rotation = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        [Category("Transformation")]
+        [Description("Scale of the model.")]
+        public float Scale
+        {
+            get => m_scale;
+            set
+            {
+                if (m_scale != value)
+                {
+                    m_scale = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
     }
 }
 
+    

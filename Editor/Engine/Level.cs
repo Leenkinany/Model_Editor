@@ -15,16 +15,16 @@ namespace Editor.Engine
         public Camera GetCamera() { return m_camera; }
 
         private List<Models> m_models = new();
-        private Camera m_camera = new(new Vector3(0, 2, 2), 16 / 9);
+        private Models m_selectedModel = null;
+        private bool m_selectionDirty = false;
+        private Camera m_camera = new(new Vector3(0, 0, -20), 16f / 9f);
 
         public Level()
         { }
 
         public void LoadContent(ContentManager content)
         {
-            Models teapot = new(content, "Teapot", "Metal", "MyShader", Vector3.Zero, 1.0f);
-            AddModel(teapot);
-            teapot = new(content, "Teapot", "Metal", "MyShader", new Vector3(1, 0, -1), 1.0f);
+            Models teapot = new(content, "Teapot", "Metal", "MyShader", Vector3.Zero, 15.0f);
             AddModel(teapot);
         }
         private void AddModel(Models model)
@@ -183,29 +183,63 @@ namespace Editor.Engine
             }
         }
 
+
         public void HandlePick()
         {
             InputController ic = InputController.Instance;
-            if(ic.IsMouseButtonDown(MouseButtons.Left))
+
+            if (ic.IsMouseButtonDown(MouseButtons.Left))
             {
                 Ray r = ic.GetPickRay(m_camera);
-                foreach(Models model in m_models)
+                Models clickedModel = null;
+                float closestDistance = float.MaxValue;
+
+                foreach (Models model in m_models)
                 {
-                    model.Selected = false;
-                    foreach(ModelMesh mesh in model.Mesh.Meshes)
+                    foreach (ModelMesh mesh in model.Mesh.Meshes)
                     {
                         BoundingSphere s = mesh.BoundingSphere;
                         s = s.Transform(model.GetTransform());
+
                         float? f = r.Intersects(s);
-                        if (f.HasValue)
+
+                        if (f.HasValue && f.Value < closestDistance)
                         {
-                            model.Selected = true;
+                            closestDistance = f.Value;
+                            clickedModel = model;
                         }
                     }
+                }
+
+                if (m_selectedModel != clickedModel)
+                {
+                    if (m_selectedModel != null)
+                        m_selectedModel.Selected = false;
+
+                    m_selectedModel = clickedModel;
+
+                    if (m_selectedModel != null)
+                        m_selectedModel.Selected = true;
+
+                    m_selectionDirty = true;
                 }
             }
         }
 
 
+        public Models SelectedModel
+        {
+            get { return m_selectedModel; }
+        }
+
+        public bool SelectionDirty
+        {
+            get { return m_selectionDirty; }
+        }
+
+        public void ClearSelectionDirty()
+        {
+            m_selectionDirty = false;
+        }
     }
 }
