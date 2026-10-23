@@ -19,14 +19,27 @@ namespace Editor.Engine
 
         [Browsable(false)]
         public Effect Shader { get; set; }
-        
+
+
         [Category("Appearance")]
         [Description("Diffuse texture of the model.")]
-        [ReadOnly(true)]
+        [TypeConverter(typeof(DiffuseTextureConverter))]
         public string DiffuseTexture
         {
             get => Texture?.Tag?.ToString() ?? "";
+
+            set
+            {
+                if (m_content == null || DiffuseTexture == value)
+                    return;
+
+                Texture = m_content.Load<Texture>(value);
+                Texture.Tag = value;
+
+                OnPropertyChanged();
+            }
         }
+
 
         [Category("State")]
         [Description("Selection status.")]
@@ -57,6 +70,7 @@ namespace Editor.Engine
             Vector3 _position,
             float _scale)
         {
+            m_content = content;
 
             Mesh = content.Load<Model>(_model);
             Mesh.Tag = _model;
@@ -70,7 +84,6 @@ namespace Editor.Engine
             SetShader(Shader);
             Position = _position;
             Scale = _scale;
-
         }
         public void SetShader(Effect _effect)
         {

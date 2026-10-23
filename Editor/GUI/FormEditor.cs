@@ -122,6 +122,11 @@ namespace GUI.Editor
 
         private void saveToolStripMenuItem1_Click_1(object sender, EventArgs e)
         {
+            if (Game?.Project == null)
+            {
+                MessageBox.Show("Please create or load a project first.");
+                return;
+            }
             string fname = Path.Combine(Game.Project.Folder, Game.Project.Name);
             using var stream = File.Open(fname, FileMode.Create);
             using var writer = new BinaryWriter(stream, Encoding.UTF8, false);
