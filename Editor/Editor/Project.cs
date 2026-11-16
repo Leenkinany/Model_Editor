@@ -83,7 +83,7 @@ namespace Editor
         }
 
 
-        public void Deserialize(BinaryReader _stream, ContentManager _content)
+        public void Deserialize(BinaryReader _stream, GameEditor _content)
         {
             int firstValue = _stream.ReadInt32();
             int fileVersion;
@@ -133,7 +133,7 @@ namespace Editor
 
         public void Deserialize(
             BinaryReader stream,
-            ContentManager editorContent,
+            GameEditor editorContent,
             Func<string, ContentManager> createProjectContent)
         {
             Folder = Path.GetDirectoryName(
@@ -169,14 +169,6 @@ namespace Editor
             for (int i = 0; i < levelCount; i++)
             {
                 Level level = new();
-
-                level.Deserialize(
-                    stream,
-                    editorContent,
-                    projectContent,
-                    fileVersion
-                );
-
                 Levels.Add(level);
             }
 

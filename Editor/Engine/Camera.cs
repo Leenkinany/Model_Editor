@@ -73,7 +73,7 @@ namespace Editor.Engine
             _stream.Write(AspectRatio);
         }
 
-        public void Deserialize(BinaryReader _stream, ContentManager _content)
+        public void Deserialize(BinaryReader _stream, GameEditor _content)
         {
             Position = HelpDeserialize.Vec3(_stream);
             NearPlane = _stream.ReadSingle();

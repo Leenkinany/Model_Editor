@@ -6,6 +6,6 @@ namespace Editor.Engine.Interfaces
     internal interface Iserializable
     {
         public void Serialize(BinaryWriter _stream);
-        public void Deserialize(BinaryReader _stream, ContentManager _content);
+        public void Deserialize(BinaryReader _stream, GameEditor _content);
     }
 }
