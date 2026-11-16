@@ -15,4 +15,12 @@
     <PackageReference Include="MonoGame.Framework.WindowsDX" Version="3.8.*" />
     <PackageReference Include="MonoGame.Content.Builder.Task" Version="3.8.*" />
   </ItemGroup>
+  <ItemGroup>
+    <Folder Include="External\MGCB\" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Update="ContentTemplate.mgcb">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
 </Project>

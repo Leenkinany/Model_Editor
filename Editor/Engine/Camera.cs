@@ -67,7 +67,7 @@ namespace Editor.Engine
 
         public void Serialize(BinaryWriter _stream)
         {
-            HelperSerialize.Vec3(_stream, Position);
+            HelpSerialize.Vec3(_stream, Position);
             _stream.Write(NearPlane);
             _stream.Write(FarPlane);
             _stream.Write(AspectRatio);
@@ -75,7 +75,7 @@ namespace Editor.Engine
 
         public void Deserialize(BinaryReader _stream, ContentManager _content)
         {
-            Position = HelperDeserialize.Vec3(_stream);
+            Position = HelpDeserialize.Vec3(_stream);
             NearPlane = _stream.ReadSingle();
             FarPlane = _stream.ReadSingle();
             AspectRatio = _stream.ReadSingle();

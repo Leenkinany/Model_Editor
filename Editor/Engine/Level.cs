@@ -1,9 +1,12 @@
-﻿using Microsoft.Xna.Framework;
+﻿using Editor.Engine.Interfaces;
+using Microsoft.Xna.Framework;
+using Editor.Engine.Lights;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
+using System;
 using System.Collections.Generic;
-using Editor.Engine.Interfaces;
 using System.IO;
+using System.Reflection.Metadata;
 using System.Windows.Forms;
 
 namespace Editor.Engine
@@ -16,36 +19,80 @@ namespace Editor.Engine
 
         private List<Models> m_models = new();
         private Models m_selectedModel = null;
+        private ISelectable m_selectedObject = null;
         private bool m_selectionDirty = false;
-        private Camera m_camera = new(new Vector3(0, 0, -20), 16f / 9f);
+        private Camera m_camera = new(new Vector3(30, 45, -70), 16f / 9f);
+        private Terrain m_terrain;
+        private Effect m_terrainEffect;
+        private Light m_light = new() { Position = new(0,400,-500), Color = new(0.9f, 0.9f, 0.9f) };
 
         public Level()
         { }
 
-        public void LoadContent(ContentManager content)
+        public void LoadContent(GameEditor _game)
         {
-            Models teapot = new(content, "Teapot", "Metal", "MyShader", Vector3.Zero, 15.0f);
-            AddModel(teapot);
+            m_terrain = new Terrain(
+                _game.DefaultEffect,
+                _game.DefaultHeightMap,
+                _game.DefaultGrass,
+                200,
+                _game.GraphicsDevice
+            );
         }
-        private void AddModel(Models model)
+
+        public void AddModel(Models model)
         {
             m_models.Add(model);
         }
-        public List<Models> GetSelectedModels()
+
+        public void AddImportedModel(
+            ContentManager projectContent,
+            ContentManager editorContent,
+            string modelName,
+            string textureName)
         {
-            List<Models> models = new List<Models>();
+            Models importedModel = new Models(
+                projectContent,
+                editorContent,
+                modelName,
+                textureName,
+                "MyShader",
+                new Vector3(0, 0, 0),
+                1.0f
+            );
+
+            AddModel(importedModel);
+        }
+
+
+        public List<ISelectable> GetSelectedModels()
+        {
+            List<ISelectable> models = new();
+
             foreach (var model in m_models)
             {
-                if (model.Selected) models.Add(model);
+                if (model.Selected)
+                    models.Add(model);
             }
+
+            if (m_terrain != null && m_terrain.Selected)
+            {
+                models.Add(m_terrain);
+            }
+
             return models;
         }
+
         public void Render()
         {
+            Renderer r = Renderer.Instance;
+            r.Camera = m_camera;
+            r.Light = m_light;
             foreach (Models model in m_models)
-            {
-                model.Render(m_camera.View, m_camera.Projection);
-            }
+                r.Render(model);
+
+            if (m_terrain != null)
+                r.Render(m_terrain);
         }
 
         public void Update(float _delta)
@@ -69,14 +116,99 @@ namespace Editor.Engine
         public void Deserialize(BinaryReader _stream, ContentManager _content)
         {
             int modelCount = _stream.ReadInt32();
+
             for (int i = 0; i < modelCount; i++)
             {
                 Models model = new();
                 model.Deserialize(_stream, _content);
                 m_models.Add(model);
             }
+
+            // Restore the saved camera.
             m_camera.Deserialize(_stream, _content);
+
+            // Recreate terrain resources.
+            Texture2D heightMap = _content.Load<Texture2D>("DefaultHeightMap");
+            Texture2D grass = _content.Load<Texture2D>("DefaultGrass");
+
+            m_terrainEffect = _content.Load<Effect>("DefaultShader");
+
+            IGraphicsDeviceService graphicsService =
+                _content.ServiceProvider.GetService(
+                    typeof(IGraphicsDeviceService)
+                ) as IGraphicsDeviceService;
+
+            if (graphicsService == null)
+                throw new InvalidOperationException(
+                    "Graphics device unavailable"
+                );
+
+            m_terrain = new Terrain(
+                m_terrainEffect,
+                heightMap,
+                grass,
+                50,
+                graphicsService.GraphicsDevice
+            );
+
         }
+
+        public void Deserialize(
+            BinaryReader stream,
+            ContentManager editorContent,
+            ContentManager projectContent,
+            int fileVersion)
+        {
+            int modelCount = stream.ReadInt32();
+            for (int i = 0; i < modelCount; i++)
+            {
+                Models model = new();
+
+                model.Deserialize(
+                    stream,
+                    editorContent,
+                    projectContent,
+                    fileVersion >= 2
+                );
+
+                m_models.Add(model);
+            }
+
+            // Restore the saved camera.
+            m_camera.Deserialize(stream, editorContent);
+
+            // Recreate the terrain without adding another teapot
+            // or resetting the saved camera.
+            Texture2D heightMap =
+                editorContent.Load<Texture2D>("DefaultHeightMap");
+
+            Texture2D grass =
+                editorContent.Load<Texture2D>("DefaultGrass");
+
+            m_terrainEffect =
+                editorContent.Load<Effect>("DefaultShader");
+
+            IGraphicsDeviceService graphicsService =
+                editorContent.ServiceProvider.GetService(
+                    typeof(IGraphicsDeviceService)
+                ) as IGraphicsDeviceService;
+
+            if (graphicsService == null)
+            {
+                throw new InvalidOperationException(
+                    "Graphics device unavailable");
+            }
+
+            m_terrain = new Terrain(
+                m_terrainEffect,
+                heightMap,
+                grass,
+                50,
+                graphicsService.GraphicsDevice
+            );
+
+        }
+
         public override string ToString()
         {
             string s = string.Empty;
@@ -134,7 +266,6 @@ namespace Editor.Engine
                 }
             }
         }
-
         private void HandleRotate(float _delta)
         {
             InputController ic = InputController.Instance;
@@ -161,7 +292,6 @@ namespace Editor.Engine
                 }                
             }
         }
-
         private void HandleScale(float _delta)
         {
             InputController ic = InputController.Instance;
@@ -182,54 +312,100 @@ namespace Editor.Engine
                 }
             }
         }
-
-
-        public void HandlePick()
+        internal ISelectable HandlePick(bool _select = true)
         {
             InputController ic = InputController.Instance;
 
-            if (ic.IsMouseButtonDown(MouseButtons.Left))
+            if (ic.IsMouseButtonDown(MouseButtons.Left) || !_select)
             {
-                Ray r = ic.GetPickRay(m_camera);
+                Ray r = HelpMath.GetPickRay(ic.MousePosition, m_camera);
+
                 Models clickedModel = null;
+                ISelectable clickedObject = null;
                 float closestDistance = float.MaxValue;
 
+                // Check model triangles.
                 foreach (Models model in m_models)
                 {
+                    Matrix transform = model.GetTransform();
+
                     foreach (ModelMesh mesh in model.Mesh.Meshes)
                     {
-                        BoundingSphere s = mesh.BoundingSphere;
-                        s = s.Transform(model.GetTransform());
+                        BoundingSphere sphere = mesh.BoundingSphere;
+                        sphere = sphere.Transform(transform);
 
-                        float? f = r.Intersects(s);
+                        float? sphereHit = r.Intersects(sphere);
 
-                        if (f.HasValue && f.Value < closestDistance)
+                        if (sphereHit.HasValue &&
+                            sphereHit.Value < closestDistance)
                         {
-                            closestDistance = f.Value;
-                            clickedModel = model;
+                            float? triangleHit =
+                                HelpMath.PickTriangle(
+                                    in mesh, ref r, ref transform);
+
+                            if (triangleHit.HasValue &&
+                                triangleHit.Value < closestDistance)
+                            {
+                                closestDistance = triangleHit.Value;
+                                clickedModel = model;
+                                clickedObject = model;
+                            }
                         }
                     }
                 }
 
-                if (m_selectedModel != clickedModel)
+                // Check terrain triangles.
+                if (m_terrain != null)
                 {
-                    if (m_selectedModel != null)
-                        m_selectedModel.Selected = false;
+                    Matrix terrainTransform = Matrix.Identity;
 
+                    float? terrainHit = HelpMath.PickTriangle(
+                        in m_terrain,
+                        ref r,
+                        ref terrainTransform
+                    );
+
+                    if (terrainHit.HasValue &&
+                        terrainHit.Value < closestDistance)
+                    {
+                        closestDistance = terrainHit.Value;
+                        clickedModel = null;
+                        clickedObject = m_terrain;
+                    }
+                }
+                if (!_select)
+                    return clickedObject;
+                // Update selection.
+                bool selectionChanged = m_selectedObject != clickedObject;
+
+                if (selectionChanged)
+                {
+                    if (m_selectedObject != null)
+                        m_selectedObject.Selected = false;
+
+                    m_selectedObject = clickedObject;
                     m_selectedModel = clickedModel;
 
-                    if (m_selectedModel != null)
-                        m_selectedModel.Selected = true;
+                    if (m_selectedObject != null)
+                        m_selectedObject.Selected = true;
 
                     m_selectionDirty = true;
+
                 }
             }
+            return null;
         }
+
 
 
         public Models SelectedModel
         {
             get { return m_selectedModel; }
+        }
+
+        public ISelectable SelectedObject
+        {
+            get { return m_selectedObject; }
         }
 
         public bool SelectionDirty

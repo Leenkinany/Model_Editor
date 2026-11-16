@@ -1,5 +1,7 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using Microsoft.Xna.Framework.Content;
+using System.IO;
 using System.Windows.Forms;
 using Editor.Engine;
 using GUI.Editor;
@@ -8,12 +10,18 @@ namespace Editor
 {
     public class GameEditor : Game
     {
+        internal Project Project { get; set; }
+        internal Texture DefaultTexture { get; set; }
+        internal Effect DefaultEffect { get; set; }
+        internal ContentManager ProjectContent { get; private set; }
+        internal Texture2D DefaultGrass{ get; set; }
+        internal Texture2D DefaultHeightMap { get; set; }
+
         private SpriteBatch m_spriteBatch;
         private FontController m_fonts; 
         private GraphicsDeviceManager _graphics;
         private FormEditor m_parent;
         private Models m_observedModel;
-        internal Project Project { get; set; }
         RasterizerState m_rasterState = new RasterizerState();
         DepthStencilState m_depthStencilState = new DepthStencilState();
 
@@ -48,9 +56,30 @@ namespace Editor
             m_spriteBatch = new(GraphicsDevice);
             m_fonts = new();
             m_fonts.LoadContent(Content);
+            DefaultTexture = Content.Load<Texture>("DefaultTexture");
+
+            DefaultGrass = Content.Load<Texture2D>("DefaultGrass");
+            DefaultHeightMap = Content.Load<Texture2D>("DefaultHeightMap");
+
+            DefaultEffect = Content.Load<Effect>("MyShader");
         }
 
+        public void InitializeProjectContent()
+        {
+            ProjectContent?.Unload();
+            ProjectContent?.Dispose();
 
+            if (Project == null)
+            {
+                ProjectContent = null;
+                return;
+            }
+
+            ProjectContent = new ContentManager(
+                Services,
+                Path.Combine(Project.Folder, "bin")
+            );
+        }
 
         protected override void Update(GameTime gameTime)
         {
@@ -67,7 +96,10 @@ namespace Editor
                 {
                     Models selectedModel = level.SelectedModel;
 
-                    // Subscribe to the selected model
+                    // Get either the selected model or terrain.
+                    object selectedObject = level.SelectedObject;
+
+                    // Keep observing model property changes.
                     ObserveModel(selectedModel);
 
                     if (m_parent != null && !m_parent.IsDisposed)
@@ -80,14 +112,14 @@ namespace Editor
                                     if (!m_parent.propertyGrid.IsDisposed)
                                     {
                                         m_parent.propertyGrid.SelectedObject =
-                                            selectedModel;
+                                        selectedObject;
                                     }
                                 }));
                         }
                         else
                         {
                             m_parent.propertyGrid.SelectedObject =
-                                selectedModel;
+                            selectedObject;
                         }
                     }
 
