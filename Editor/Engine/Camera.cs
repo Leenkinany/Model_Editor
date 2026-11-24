@@ -9,12 +9,12 @@ namespace Editor.Engine
     internal class Camera : Iserializable
     {
         public Vector3 Position { get; set; } = new Vector3(0, 0, 0);
-        public Vector3 Target { get; set; } = new Vector3(0, 0, 0);
+        public Vector3 Target { get; set; } = new Vector3(300, 0, 0);
         public Matrix View { get; set; } = Matrix.Identity;
         public Matrix Projection { get; set; } = Matrix.Identity;
         public float NearPlane { get; set; } = 0.1f;
         public float FarPlane { get; set; } = 1000f;
-        public float AspectRatio { get; set; } = 16f / 9f;
+        public float AspectRatio { get; set; } = 16 / 9;
         public Viewport viewport { get; set; }
 
         public Camera() { }

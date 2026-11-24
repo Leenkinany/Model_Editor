@@ -2,6 +2,7 @@
 using Editor;
 using Editor.Engine;
 using Editor.Engine.Interfaces;
+using Editor.GUI;
 using Microsoft.Xna.Framework;
 using System;
 using System.ComponentModel;
@@ -10,13 +11,13 @@ using System.Diagnostics;
 using System.IO;
 using System.Text;
 using System.Windows.Forms;
+using AssetTypes = Editor.Editor.AssetTypes;
 
 namespace GUI.Editor
 {
     public partial class FormEditor : Form
     {
-        [DesignerSerializationVisibility(
-            DesignerSerializationVisibility.Hidden)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public GameEditor Game
         {
             get => m_game;
@@ -36,6 +37,7 @@ namespace GUI.Editor
         {
             InitializeComponent();
             KeyPreview = true;
+            toolStripStatusLabel1.Text = Directory.GetCurrentDirectory();
             listBoxAssets.MouseDown += ListBoxAssets_MouseDown;
         }
 
@@ -97,7 +99,7 @@ namespace GUI.Editor
                 as ListItemAsset;
 
             if (asset == null ||
-                m_game?.Project?.CurrentLevel == null)
+                Game?.Project?.CurrentLevel == null)
                 return;
 
             if (asset.Type == AssetTypes.MODEL)
@@ -109,9 +111,7 @@ namespace GUI.Editor
             if (asset.Type == AssetTypes.TEXTURE ||
                 asset.Type == AssetTypes.EFFECT)
             {
-                Form gameForm = sender as Form;
-
-                if (gameForm == null)
+                if (sender is not Form gameForm)
                     return;
 
                 System.Drawing.Point mouse =
@@ -122,7 +122,7 @@ namespace GUI.Editor
                     new Vector2(mouse.X, mouse.Y);
 
                 ISelectable selected =
-                    m_game.Project.CurrentLevel.HandlePick(false);
+                    Game.Project.CurrentLevel.HandlePick(false);
 
                 if (selected is IMaterial material)
                 {
@@ -143,7 +143,7 @@ namespace GUI.Editor
                 as ListItemAsset;
 
             if (asset == null ||
-                m_game?.Project?.CurrentLevel == null)
+                Game?.Project?.CurrentLevel == null)
                 return;
 
             try
@@ -154,11 +154,11 @@ namespace GUI.Editor
                 }
                 else if (asset.Type == AssetTypes.TEXTURE)
                 {
-                    m_dropped?.SetTexture(m_game, asset.Name);
+                    m_dropped?.SetTexture(Game, asset.Name);
                 }
                 else if (asset.Type == AssetTypes.EFFECT)
                 {
-                    m_dropped?.SetShader(m_game, asset.Name);
+                    m_dropped?.SetShader(Game, asset.Name);
                 }
             }
             catch (Exception ex)
@@ -177,16 +177,6 @@ namespace GUI.Editor
             if (Game?.Project?.CurrentLevel == null)
                 return;
 
-            if (Game.ProjectContent == null)
-            {
-                MessageBox.Show(
-                    "Project content is not initialized.");
-                return;
-            }
-
-            // The model constructor matches the simplified Models.cs.
-            // Models.Create must support ProjectContent for imported
-            // assets before this can load imported Fighter models.
             Models model = new Models(
                 Game,
                 modelName,
@@ -283,8 +273,11 @@ namespace GUI.Editor
             if (dialog.ShowDialog() != DialogResult.OK)
                 return;
 
+            if (Game?.Project != null)
+                Game.Project.OnAssetsUpdated -= Project_OnAssetsUpdated;
+
             Game.Project = new Project(Game, dialog.FileName);
-            Game.InitializeProjectContent();
+            Game.Project.OnAssetsUpdated += Project_OnAssetsUpdated;
             Game.Project.AssetMonitor.UpdateAssetsDB();
 
             Text = "Our Cool Editor - " + Game.Project.Name;
@@ -335,94 +328,37 @@ namespace GUI.Editor
             using var reader =
                 new BinaryReader(stream, Encoding.UTF8, false);
 
-            Game.Project = new Project();
+            if (Game?.Project != null)
+                Game.Project.OnAssetsUpdated -= Project_OnAssetsUpdated;
 
-            Game.Project.Deserialize(
-                reader,
-                Game,
-                folder =>
-                {
-                    Game.Project.Folder = folder;
-                    Game.InitializeProjectContent();
-                    return Game.ProjectContent;
-                });
+            Game.Project = new Project();
+            Game.Project.Deserialize(reader, Game);
+
+            Game.Project.OnAssetsUpdated += Project_OnAssetsUpdated;
+            Game.Project.AssetMonitor.UpdateAssetsDB();
 
             Text = "Our Cool Editor - " + Game.Project.Name;
 
             Game.AdjustAspectRatio();
-            Game.Project.AssetMonitor.UpdateAssetsDB();
             RefreshAssetList();
         }
 
-        private void importToolStripMenuItem_Click(
-            object sender, EventArgs e)
+        private void Project_OnAssetsUpdated()
         {
-            if (Game?.Project == null)
-            {
-                MessageBox.Show(
-                    "Please create or open a project first.");
-                return;
-            }
-
-            string editorPath =
-                ConfigurationManager.AppSettings[
-                    "MGCB_EditorPath"];
-
-            if (string.IsNullOrWhiteSpace(editorPath))
-            {
-                MessageBox.Show(
-                    "MGCB editor path is not configured.");
-                return;
-            }
-
-            string executablePath = Path.Combine(
-                editorPath, "mgcb-editor-windows.exe");
-
-            string contentPath = Path.Combine(
-                Game.Project.Folder, "Content.mgcb");
-
-            if (!File.Exists(executablePath) ||
-                !File.Exists(contentPath))
-            {
-                MessageBox.Show(
-                    "MGCB executable or Content.mgcb not found.");
-                return;
-            }
-
-            ProcessStartInfo startInfo = new ProcessStartInfo
-            {
-                FileName = executablePath,
-                Arguments = "\"" + contentPath + "\"",
-                WorkingDirectory = Game.Project.Folder,
-                UseShellExecute = true
-            };
-
-            m_MGCBProcess = Process.Start(startInfo);
-
-            if (m_MGCBProcess == null)
+            if (IsDisposed || !IsHandleCreated)
                 return;
 
-            m_MGCBProcess.EnableRaisingEvents = true;
-
-            m_MGCBProcess.Exited += (s, args) =>
-            {
-                if (!IsDisposed && IsHandleCreated)
-                {
-                    BeginInvoke(new Action(() =>
-                    {
-                        if (!IsDisposed)
-                        {
-                            Game.InitializeProjectContent();
-                            Game.Project.AssetMonitor.UpdateAssetsDB();
-                            RefreshAssetList();
-                        }
-                    }));
-                }
-            };
+            if (InvokeRequired)
+                BeginInvoke(new Action(RefreshAssetList));
+            else
+                RefreshAssetList();
         }
 
         private void RefreshAssetList()
         {
+            if (IsDisposed)
+                return;
+
             if (InvokeRequired)
             {
                 BeginInvoke(new Action(RefreshAssetList));
@@ -459,17 +395,85 @@ namespace GUI.Editor
 
                 listBoxAssets.Items.Add(new ListItemAsset
                 {
-                    Name = "",
+                    Name = " ",
                     Type = AssetTypes.NONE
                 });
             }
         }
 
+        private void importToolStripMenuItem_Click(
+            object sender, EventArgs e)
+        {
+            if (Game?.Project == null)
+            {
+                MessageBox.Show(
+                    "Please create or load a project first.");
+                return;
+            }
+
+            string mgcbEditorPath =
+                ConfigurationManager.AppSettings["MGCB_EditorPath"];
+
+            if (string.IsNullOrWhiteSpace(mgcbEditorPath))
+            {
+                MessageBox.Show(
+                    "MGCB_EditorPath is not configured in App.config.");
+                return;
+            }
+
+            string executablePath = Path.Combine(
+                mgcbEditorPath,
+                "mgcb-editor-windows.exe");
+
+            string contentPath = Path.Combine(
+                Game.Project.ContentFolder,
+                "Content.mgcb");
+
+            if (!File.Exists(executablePath) ||
+                !File.Exists(contentPath))
+            {
+                MessageBox.Show(
+                    "MGCB editor or Content.mgcb not found.\n" +
+                    executablePath + "\n" + contentPath);
+                return;
+            }
+
+            ProcessStartInfo startInfo = new()
+            {
+                FileName = executablePath,
+                Arguments = "\"" + contentPath + "\"",
+                WorkingDirectory = Game.Project.ContentFolder,
+                UseShellExecute = true
+            };
+
+            m_MGCBProcess = Process.Start(startInfo);
+
+            if (m_MGCBProcess == null)
+                return;
+
+            m_MGCBProcess.EnableRaisingEvents = true;
+
+            m_MGCBProcess.Exited += (s, args) =>
+            {
+                if (!IsDisposed && IsHandleCreated)
+                {
+                    BeginInvoke(new Action(() =>
+                    {
+                        if (IsDisposed ||
+                            Game?.Project?.AssetMonitor == null)
+                            return;
+
+                        Game.Project.AssetMonitor.UpdateAssetsDB();
+                        RefreshAssetList();
+                    }));
+                }
+            };
+        }
+
         private void listBoxAssets_DoubleClick(
             object sender, EventArgs e)
         {
-            if (Game?.Project?.CurrentLevel == null ||
-                Game.ProjectContent == null)
+            if (Game?.Project?.CurrentLevel == null)
                 return;
 
             ListItemAsset asset =
@@ -494,33 +498,53 @@ namespace GUI.Editor
             }
         }
 
-        // Keep these handlers if referenced by FormEditor.Designer.cs.
+        private void FormEditor_FormClosing(
+            object sender, FormClosingEventArgs e)
+        {
+            if (m_MGCBProcess == null)
+                return;
+
+            if (!m_MGCBProcess.HasExited)
+                m_MGCBProcess.Kill();
+
+            m_MGCBProcess.Dispose();
+        }
+
+        // Keep these handlers if used by FormEditor.Designer.cs.
+
         private void FormEditor_Load(
             object sender, EventArgs e)
-        { }
+        {
+        }
 
         private void createToolStripMenuItem1_Click(
             object sender, EventArgs e)
-        { }
+        {
+        }
 
         private void saveToolStripMenuItem1_Click(
             object sender, EventArgs e)
-        { }
+        {
+        }
 
         private void loadToolStripMenuItem1_Click(
             object sender, EventArgs e)
-        { }
+        {
+        }
 
         private void propertyGrid_Click(
             object sender, EventArgs e)
-        { }
+        {
+        }
 
         private void splitContainer_Panel1_Paint(
             object sender, PaintEventArgs e)
-        { }
+        {
+        }
 
         private void listBoxAssets_SelectedIndexChanged(
             object sender, EventArgs e)
-        { }
+        {
+        }
     }
 }

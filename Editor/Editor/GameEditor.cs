@@ -2,6 +2,7 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Content;
+using System;
 using System.IO;
 using System.Windows.Forms;
 using Editor.Engine;
@@ -12,18 +13,21 @@ namespace Editor
     public class GameEditor : Game
     {
         internal Project Project { get; set; }
+
         internal Texture DefaultTexture { get; set; }
-        internal Effect DefaultEffect { get; set; }
-        internal ContentManager ProjectContent { get; private set; }
         internal Texture2D DefaultGrass { get; set; }
         internal Texture2D DefaultHeightMap { get; set; }
+        internal Effect DefaultEffect { get; set; }
 
-        private SpriteBatch m_spriteBatch;
-        private FontController m_fonts;
+        internal ContentManager ProjectContent { get; private set; }
+
         private GraphicsDeviceManager _graphics;
         private FormEditor m_parent;
+        private SpriteBatch m_spriteBatch;
+        private FontController m_fonts;
 
         private RasterizerState m_rasterState;
+        private DepthStencilState m_depthStencilState;
 
         public GameEditor()
         {
@@ -32,10 +36,11 @@ namespace Editor
             Content.RootDirectory = "Content";
             IsMouseVisible = true;
 
-            m_rasterState = new RasterizerState
-            {
-                CullMode = CullMode.None
-            };
+            m_rasterState = new RasterizerState();
+            m_rasterState.CullMode = CullMode.None;
+
+            m_depthStencilState = new DepthStencilState();
+            m_depthStencilState.DepthBufferEnable = true;
         }
 
         public GameEditor(FormEditor parent) : this()
@@ -50,6 +55,11 @@ namespace Editor
             gameForm.FormBorderStyle = FormBorderStyle.None;
 
             m_parent.splitContainer.Panel1.Controls.Add(gameForm);
+        }
+
+        protected override void Initialize()
+        {
+            base.Initialize();
         }
 
         protected override void LoadContent()
@@ -85,8 +95,82 @@ namespace Editor
 
             ProjectContent = new ContentManager(
                 Services,
-                Path.Combine(Project.Folder, "bin")
+                Project.AssetFolder
             );
+        }
+
+        private void UpdateSelected()
+        {
+            if (Project?.CurrentLevel == null)
+                return;
+
+            Level level = Project.CurrentLevel;
+
+            // Support both old and new selection systems.
+            if (!Models.SelectedDirty && !level.SelectionDirty)
+                return;
+
+            var models = level.GetSelectedModels();
+
+            object selectedObject = null;
+            object[] selectedObjects = null;
+
+            // Preserve multiple-model selection.
+            if (models.Count > 1)
+            {
+                selectedObjects = new object[models.Count];
+
+                for (int i = 0; i < models.Count; i++)
+                {
+                    selectedObjects[i] = models[i];
+                }
+            }
+            else if (models.Count == 1)
+            {
+                selectedObject = models[0];
+            }
+            else
+            {
+                // Fallback to the newer Level selection.
+                selectedObject = level.SelectedObject;
+            }
+
+            if (m_parent != null && !m_parent.IsDisposed)
+            {
+                var grid = m_parent.propertyGrid;
+
+                if (!grid.IsDisposed)
+                {
+                    Action updateGrid = () =>
+                    {
+                        if (grid.IsDisposed)
+                            return;
+
+                        if (selectedObjects != null)
+                        {
+                            grid.SelectedObjects = selectedObjects;
+                        }
+                        else
+                        {
+                            grid.SelectedObject = selectedObject;
+                        }
+
+                        grid.Refresh();
+                    };
+
+                    if (grid.InvokeRequired)
+                    {
+                        grid.BeginInvoke(updateGrid);
+                    }
+                    else
+                    {
+                        updateGrid();
+                    }
+                }
+            }
+
+            Models.SelectedDirty = false;
+            level.ClearSelectionDirty();
         }
 
         protected override void Update(GameTime gameTime)
@@ -96,41 +180,10 @@ namespace Editor
                 Project.Update(
                     (float)gameTime.ElapsedGameTime.TotalSeconds);
 
+                // Update the PropertyGrid after level selection.
+                UpdateSelected();
+
                 InputController.Instance.Clear();
-
-                Level level = Project.CurrentLevel;
-
-                if (level.SelectionDirty)
-                {
-                    object selectedObject =
-                        level.SelectedObject;
-
-                    if (m_parent != null &&
-                        !m_parent.IsDisposed)
-                    {
-                        var grid = m_parent.propertyGrid;
-
-                        if (grid.InvokeRequired)
-                        {
-                            grid.BeginInvoke(
-                                new System.Action(() =>
-                                {
-                                    if (!grid.IsDisposed)
-                                    {
-                                        grid.SelectedObject =
-                                            selectedObject;
-                                    }
-                                }));
-                        }
-                        else
-                        {
-                            grid.SelectedObject =
-                                selectedObject;
-                        }
-                    }
-
-                    level.ClearSelectionDirty();
-                }
             }
 
             base.Update(gameTime);
@@ -179,17 +232,45 @@ namespace Editor
 
         public void AdjustAspectRatio()
         {
-            if (Project == null)
+            if (Project?.CurrentLevel == null)
                 return;
 
-            Camera camera = Project.CurrentLevel.GetCamera();
+            Camera camera =
+                Project.CurrentLevel.GetCamera();
 
-            camera.viewport = _graphics.GraphicsDevice.Viewport;
+            camera.viewport =
+                _graphics.GraphicsDevice.Viewport;
 
             camera.Update(
                 camera.Position,
                 _graphics.GraphicsDevice.Viewport.AspectRatio
             );
+        }
+
+        private void Model_PropertyChanged(
+            object sender,
+            System.ComponentModel.PropertyChangedEventArgs e)
+        {
+            if (m_parent == null || m_parent.IsDisposed)
+                return;
+
+            var grid = m_parent.propertyGrid;
+
+            if (grid.IsDisposed)
+                return;
+
+            if (grid.InvokeRequired)
+            {
+                grid.BeginInvoke(new Action(() =>
+                {
+                    if (!grid.IsDisposed)
+                        grid.Refresh();
+                }));
+            }
+            else
+            {
+                grid.Refresh();
+            }
         }
     }
 }
