@@ -1,10 +1,9 @@
-﻿
-using Editor.Engine.Interfaces;
-using Editor.Engine.Lights;
-using Microsoft.Xna.Framework;
+﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
 using System.Collections.Generic;
+using Editor.Engine.Interfaces;
+using Editor.Engine.Lights;
 using System.IO;
 using System.Windows.Forms;
 
@@ -13,22 +12,29 @@ namespace Editor.Engine
     internal class Level : Iserializable
     {
         private List<Models> m_models = new();
+
+        // Selection
         private Models m_selectedModel = null;
         private ISelectable m_selectedObject = null;
         private bool m_selectionDirty = false;
 
+        // Camera - new version's position
         private Camera m_camera =
-            new(new Vector3(30, 45, -70), 16f / 9f);
+            new(new Vector3(0, 400, 500), 16f / 9f);
 
-        private Terrain m_terrain;
-
+        // Lighting
         private Light m_light = new()
         {
             Position = new(0, 400, -500),
             Color = new(0.9f, 0.9f, 0.9f)
         };
 
-        public Level() { }
+        // Terrain
+        private Terrain m_terrain = null;
+
+        public Level()
+        {
+        }
 
         public Camera GetCamera()
         {
@@ -55,15 +61,16 @@ namespace Editor.Engine
         {
             List<ISelectable> models = new();
 
-            foreach (Models model in m_models)
+            foreach (var model in m_models)
             {
                 if (model.Selected)
                     models.Add(model);
             }
 
-            if (m_terrain != null && m_terrain.Selected)
+            if (m_terrain != null)
             {
-                models.Add(m_terrain);
+                if (m_terrain.Selected)
+                    models.Add(m_terrain);
             }
 
             return models;
@@ -71,60 +78,71 @@ namespace Editor.Engine
 
         public void Render()
         {
-            Renderer renderer = Renderer.Instance;
+            Renderer r = Renderer.Instance;
 
-            renderer.Camera = m_camera;
-            renderer.Light = m_light;
+            r.Camera = m_camera;
+            r.Light = m_light;
 
-            foreach (Models model in m_models)
+            foreach (Models m in m_models)
             {
-                renderer.Render(model);
+                r.Render(m);
             }
 
             if (m_terrain != null)
             {
-                renderer.Render(m_terrain);
+                r.Render(m_terrain);
             }
         }
 
-        public void Update(float delta)
+        public void Update(float _delta)
         {
             HandleTranslate();
-            HandleRotate(delta);
-            HandleScale(delta);
+            HandleRotate(_delta);
+            HandleScale(_delta);
             HandlePick();
         }
 
-        public void Serialize(BinaryWriter stream)
+        public void Serialize(BinaryWriter _stream)
         {
-            stream.Write(m_models.Count);
+            _stream.Write(m_models.Count);
 
-            foreach (Models model in m_models)
+            foreach (var model in m_models)
             {
-                model.Serialize(stream);
+                model.Serialize(_stream);
             }
 
-            m_camera.Serialize(stream);
+            m_camera.Serialize(_stream);
         }
 
         public void Deserialize(
-            BinaryReader stream,
+            BinaryReader _stream,
             GameEditor game)
         {
             m_models.Clear();
 
-            int modelCount = stream.ReadInt32();
+            int modelCount = _stream.ReadInt32();
 
             for (int i = 0; i < modelCount; i++)
             {
                 Models model = new();
-                model.Deserialize(stream, game);
+
+                model.Deserialize(_stream, game);
+
                 m_models.Add(model);
             }
 
-            m_camera.Deserialize(stream, game);
+            m_camera.Deserialize(_stream, game);
 
             LoadContent(game);
+
+            // Reset selection after loading.
+            foreach (Models model in m_models)
+            {
+                model.Selected = false;
+            }
+
+            if (m_terrain != null)
+                m_terrain.Selected = false;
 
             m_selectedModel = null;
             m_selectedObject = null;
@@ -133,29 +151,30 @@ namespace Editor.Engine
 
         public override string ToString()
         {
-            string result = string.Empty;
+            string s = string.Empty;
 
-            foreach (Models model in m_models)
+            foreach (Models m in m_models)
             {
-                if (model.Selected)
+                if (m.Selected)
                 {
-                    result += "\nModel : Pos: " +
-                              model.Position.ToString() +
-                              "  Rot: " +
-                              model.Rotation.ToString();
+                    s += "\nModel : Pos: " +
+                         m.Position.ToString() +
+                         "  Rot: " +
+                         m.Rotation.ToString();
                 }
             }
 
-            return m_camera.ToString() + result;
+            return m_camera.ToString() + s;
         }
 
         private void HandleTranslate()
         {
             InputController ic = InputController.Instance;
+
             Vector3 translate = Vector3.Zero;
 
             if (ic.IsKeyDown(Keys.Left))
-                translate.X -= 10;
+                translate.X += -10;
 
             if (ic.IsKeyDown(Keys.Right))
                 translate.X += 10;
@@ -166,7 +185,7 @@ namespace Editor.Engine
                     translate.Z += 1;
 
                 if (ic.IsKeyDown(Keys.Down))
-                    translate.Z -= 1;
+                    translate.Z += -1;
             }
             else
             {
@@ -174,16 +193,16 @@ namespace Editor.Engine
                     translate.Y += 10;
 
                 if (ic.IsKeyDown(Keys.Down))
-                    translate.Y -= 10;
+                    translate.Y += -10;
             }
 
             if (ic.IsMouseButtonDown(MouseButtons.Middle))
             {
-                Vector2 direction =
+                Vector2 dir =
                     ic.MousePosition - ic.LastPosition;
 
-                translate.X = direction.X;
-                translate.Y = -direction.Y;
+                translate.X = dir.X;
+                translate.Y = -dir.Y;
             }
 
             if (ic.GetWheel() != 0)
@@ -203,33 +222,38 @@ namespace Editor.Engine
 
                         model.Translate(
                             translate / 1000,
-                            m_camera);
+                            m_camera
+                        );
                     }
                 }
 
                 if (!modelTranslated)
                 {
-                    m_camera.Translate(translate * 0.001f);
+                    m_camera.Translate(
+                        translate * 0.001f
+                    );
                 }
             }
         }
 
-        private void HandleRotate(float delta)
+        private void HandleRotate(float _delta)
         {
             InputController ic = InputController.Instance;
 
             if (ic.IsMouseButtonDown(MouseButtons.Right) &&
-                !ic.IsKeyDown(Keys.Menu))
+                (!ic.IsKeyDown(Keys.Menu)))
             {
-                Vector2 direction =
+                Vector2 dir =
                     ic.MousePosition - ic.LastPosition;
 
-                if (direction != Vector2.Zero)
+                if (dir != Vector2.Zero)
                 {
-                    Vector3 movement = new Vector3(
-                        direction.Y,
-                        direction.X,
-                        0) * delta;
+                    Vector3 movement =
+                        new Vector3(
+                            dir.Y,
+                            dir.X,
+                            0
+                        ) * _delta;
 
                     bool modelRotated = false;
 
@@ -238,6 +262,7 @@ namespace Editor.Engine
                         if (model.Selected)
                         {
                             modelRotated = true;
+
                             model.Rotation += movement;
                         }
                     }
@@ -250,61 +275,65 @@ namespace Editor.Engine
             }
         }
 
-        private void HandleScale(float delta)
+        private void HandleScale(float _delta)
         {
             InputController ic = InputController.Instance;
 
             if (ic.IsMouseButtonDown(MouseButtons.Right) &&
-                !ic.IsKeyDown(Keys.Menu))
+                (!ic.IsKeyDown(Keys.Menu)))
             {
-                float amount =
-                    ic.MousePosition.X - ic.LastPosition.X;
+                float l =
+                    ic.MousePosition.X -
+                    ic.LastPosition.X;
 
-                if (amount != 0)
+                if (l != 0)
                 {
-                    amount *= delta;
+                    l *= _delta;
 
                     foreach (Models model in m_models)
                     {
                         if (model.Selected)
                         {
-                            model.Scale += amount;
+                            model.Scale += l;
                         }
                     }
                 }
             }
         }
 
-        internal ISelectable HandlePick(bool select = true)
+        internal ISelectable HandlePick(bool _select = true)
         {
-            InputController ic = InputController.Instance;
+            InputController ic =
+                InputController.Instance;
 
             if (ic.IsMouseButtonDown(MouseButtons.Left) ||
-                !select)
+                !_select)
             {
-                Ray ray = HelpMath.GetPickRay(
+                Ray r = HelpMath.GetPickRay(
                     ic.MousePosition,
-                    m_camera);
+                    m_camera
+                );
 
                 Models clickedModel = null;
                 ISelectable clickedObject = null;
 
                 float closestDistance = float.MaxValue;
 
-                // Check model triangles.
+                // Check model meshes.
                 foreach (Models model in m_models)
                 {
-                    Matrix transform = model.GetTransform();
+                    Matrix transform =
+                        model.GetTransform();
 
                     foreach (ModelMesh mesh in model.Mesh.Meshes)
                     {
-                        BoundingSphere sphere =
+                        BoundingSphere s =
                             mesh.BoundingSphere;
 
-                        sphere = sphere.Transform(transform);
+                        s = s.Transform(transform);
 
                         float? sphereHit =
-                            ray.Intersects(sphere);
+                            r.Intersects(s);
 
                         if (sphereHit.HasValue &&
                             sphereHit.Value < closestDistance)
@@ -312,8 +341,9 @@ namespace Editor.Engine
                             float? triangleHit =
                                 HelpMath.PickTriangle(
                                     in mesh,
-                                    ref ray,
-                                    ref transform);
+                                    ref r,
+                                    ref transform
+                                );
 
                             if (triangleHit.HasValue &&
                                 triangleHit.Value < closestDistance)
@@ -331,25 +361,29 @@ namespace Editor.Engine
                 // Check terrain triangles.
                 if (m_terrain != null)
                 {
-                    Matrix terrainTransform = Matrix.Identity;
+                    Matrix transform = Matrix.Identity;
 
                     float? terrainHit =
                         HelpMath.PickTriangle(
                             in m_terrain,
-                            ref ray,
-                            ref terrainTransform);
+                            ref r,
+                            ref transform
+                        );
 
                     if (terrainHit.HasValue &&
                         terrainHit.Value < closestDistance)
                     {
-                        closestDistance = terrainHit.Value;
+                        closestDistance =
+                            terrainHit.Value;
+
                         clickedModel = null;
                         clickedObject = m_terrain;
                     }
                 }
 
-                // Drag-and-drop checks without changing selection.
-                if (!select)
+                // Drag-and-drop picking must not
+                // change the current selection.
+                if (!_select)
                     return clickedObject;
 
                 bool selectionChanged =
@@ -357,11 +391,13 @@ namespace Editor.Engine
 
                 if (selectionChanged)
                 {
+                    // Deselect previous object.
                     if (m_selectedObject != null)
                     {
                         m_selectedObject.Selected = false;
                     }
 
+                    // Select new object.
                     m_selectedObject = clickedObject;
                     m_selectedModel = clickedModel;
 
@@ -370,6 +406,7 @@ namespace Editor.Engine
                         m_selectedObject.Selected = true;
                     }
 
+                    // Notify GameEditor to update PropertyGrid.
                     m_selectionDirty = true;
                 }
             }
