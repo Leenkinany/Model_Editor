@@ -43,18 +43,23 @@ namespace Editor.Engine
 
         public void LoadContent(GameEditor game)
         {
-            m_terrain = new Terrain(
-                game.DefaultEffect,
-                game.DefaultHeightMap,
-                game.DefaultGrass,
-                200,
-                game.GraphicsDevice
-            );
+            //m_terrain = new Terrain( game.DefaultEffect,game.DefaultHeightMap,game.DefaultGrass,200, game.GraphicsDevice);
         }
 
         public void AddModel(Models model)
         {
             m_models.Add(model);
+        }
+        public void ClearSelectedModels()
+        {
+            foreach (var model in m_models)
+            {
+                model.Selected = false;
+            }
+            if(m_terrain != null)
+            {
+                m_terrain.Selected = false;
+            }
         }
 
         public List<ISelectable> GetSelectedModels()

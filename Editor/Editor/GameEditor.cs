@@ -1,5 +1,4 @@
-﻿
-using Microsoft.Xna.Framework;
+﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Content;
 using System;
@@ -7,6 +6,7 @@ using System.IO;
 using System.Windows.Forms;
 using Editor.Engine;
 using GUI.Editor;
+using Editor.GUI;
 
 namespace Editor
 {
@@ -54,7 +54,7 @@ namespace Editor
             gameForm.Dock = DockStyle.Fill;
             gameForm.FormBorderStyle = FormBorderStyle.None;
 
-            m_parent.splitContainer.Panel1.Controls.Add(gameForm);
+            m_parent.splitContainer1.Panel2.Controls.Add(gameForm);
         }
 
         protected override void Initialize()
@@ -99,6 +99,7 @@ namespace Editor
             );
         }
 
+
         private void UpdateSelected()
         {
             if (Project?.CurrentLevel == null)
@@ -106,86 +107,62 @@ namespace Editor
 
             Level level = Project.CurrentLevel;
 
-            // Support both old and new selection systems.
-            if (!Models.SelectedDirty && !level.SelectionDirty)
-                return;
-
-            var models = level.GetSelectedModels();
-
-            object selectedObject = null;
-            object[] selectedObjects = null;
-
-            // Preserve multiple-model selection.
-            if (models.Count > 1)
+            if (Models.SelectedDirty || level.SelectionDirty)
             {
-                selectedObjects = new object[models.Count];
+                var models = level.GetSelectedModels();
 
-                for (int i = 0; i < models.Count; i++)
+                if (m_parent != null && !m_parent.IsDisposed)
                 {
-                    selectedObjects[i] = models[i];
-                }
-            }
-            else if (models.Count == 1)
-            {
-                selectedObject = models[0];
-            }
-            else
-            {
-                // Fallback to the newer Level selection.
-                selectedObject = level.SelectedObject;
-            }
+                    var grid = m_parent.propertyGrid;
 
-            if (m_parent != null && !m_parent.IsDisposed)
-            {
-                var grid = m_parent.propertyGrid;
-
-                if (!grid.IsDisposed)
-                {
-                    Action updateGrid = () =>
+                    if (models.Count == 0)
                     {
-                        if (grid.IsDisposed)
-                            return;
-
-                        if (selectedObjects != null)
-                        {
-                            grid.SelectedObjects = selectedObjects;
-                        }
-                        else
-                        {
-                            grid.SelectedObject = selectedObject;
-                        }
-
-                        grid.Refresh();
-                    };
-
-                    if (grid.InvokeRequired)
+                        grid.SelectedObject = null;
+                        m_parent.listBoxLevel.SelectedIndex = -1;
+                    }
+                    else if (models.Count > 1)
                     {
-                        grid.BeginInvoke(updateGrid);
+                        grid.SelectedObjects = models.ToArray();
                     }
                     else
                     {
-                        updateGrid();
-                    }
-                }
-            }
+                        grid.SelectedObject = models[0];
 
-            Models.SelectedDirty = false;
-            level.ClearSelectionDirty();
+                        for (int count = 0;
+                             count < m_parent.listBoxLevel.Items.Count;
+                             count++)
+                        {
+                            ListItemLevel lil =
+                                m_parent.listBoxLevel.Items[count]
+                                as ListItemLevel;
+
+                            if (lil != null && lil.Model == models[0])
+                            {
+                                m_parent.listBoxLevel.SetSelected(
+                                    count, true);
+                                break;
+                            }
+                        }
+                    }
+
+                    grid.Refresh();
+                }
+
+                Models.SelectedDirty = false;
+                level.ClearSelectionDirty();
+            }
         }
+
 
         protected override void Update(GameTime gameTime)
         {
             if (Project != null)
             {
-                Project.Update(
-                    (float)gameTime.ElapsedGameTime.TotalSeconds);
-
-                // Update the PropertyGrid after level selection.
-                UpdateSelected();
-
+                Content.RootDirectory = Project.ContentFolder + "\\bin";
+                Project.Update((float)gameTime.ElapsedGameTime.TotalSeconds);
                 InputController.Instance.Clear();
+                UpdateSelected();
             }
-
             base.Update(gameTime);
         }
 

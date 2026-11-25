@@ -1,5 +1,4 @@
-﻿
-using Editor;
+﻿using Editor;
 using Editor.Engine;
 using Editor.Engine.Interfaces;
 using Editor.GUI;
@@ -85,92 +84,99 @@ namespace GUI.Editor
             }
         }
 
-        private void GameForm_DragOver(
-            object sender, DragEventArgs e)
+
+        private void GameForm_DragOver(object sender, DragEventArgs e)
         {
-            e.Effect = DragDropEffects.None;
             m_dropped = null;
 
-            if (!e.Data.GetDataPresent(typeof(ListItemAsset)))
-                return;
+            Form gameForm =
+                Control.FromHandle(m_game.Window.Handle) as Form;
 
-            ListItemAsset asset =
-                e.Data.GetData(typeof(ListItemAsset))
-                as ListItemAsset;
+            var p = gameForm.PointToClient(
+                new System.Drawing.Point(e.X, e.Y));
 
-            if (asset == null ||
-                Game?.Project?.CurrentLevel == null)
-                return;
+            InputController.Instance.MousePosition =
+                new Vector2(p.X, p.Y);
 
-            if (asset.Type == AssetTypes.MODEL)
+            e.Effect = DragDropEffects.None;
+
+            if (e.Data.GetDataPresent(typeof(ListItemAsset)))
             {
-                e.Effect = DragDropEffects.Copy;
-                return;
-            }
+                var lia = e.Data.GetData(typeof(ListItemAsset))
+                    as ListItemAsset;
 
-            if (asset.Type == AssetTypes.TEXTURE ||
-                asset.Type == AssetTypes.EFFECT)
-            {
-                if (sender is not Form gameForm)
-                    return;
+                if (lia == null) return;
 
-                System.Drawing.Point mouse =
-                    gameForm.PointToClient(
-                        new System.Drawing.Point(e.X, e.Y));
-
-                InputController.Instance.MousePosition =
-                    new Vector2(mouse.X, mouse.Y);
-
-                ISelectable selected =
-                    Game.Project.CurrentLevel.HandlePick(false);
-
-                if (selected is IMaterial material)
+                if (lia.Type == AssetTypes.MODEL)
                 {
-                    m_dropped = material;
                     e.Effect = DragDropEffects.Copy;
                 }
+                else if (lia.Type == AssetTypes.TEXTURE ||
+                         lia.Type == AssetTypes.EFFECT)
+                {
+                    ISelectable obj =
+                        m_game.Project.CurrentLevel.HandlePick(false);
+
+                    if (obj is IMaterial)
+                        m_dropped = obj as IMaterial;
+
+                    if (m_dropped != null)
+                        e.Effect = DragDropEffects.Copy;
+                }
             }
         }
 
-        private void GameForm_DragDrop(
-            object sender, DragEventArgs e)
+
+
+        private void GameForm_DragDrop(object sender, DragEventArgs e)
         {
-            if (!e.Data.GetDataPresent(typeof(ListItemAsset)))
-                return;
-
-            ListItemAsset asset =
-                e.Data.GetData(typeof(ListItemAsset))
-                as ListItemAsset;
-
-            if (asset == null ||
-                Game?.Project?.CurrentLevel == null)
-                return;
-
-            try
+            if (e.Data.GetDataPresent(typeof(ListItemAsset)))
             {
-                if (asset.Type == AssetTypes.MODEL)
+                var lia = e.Data.GetData(typeof(ListItemAsset))
+                    as ListItemAsset;
+
+                if (lia == null || Game?.Project?.CurrentLevel == null)
+                    return;
+
+                try
                 {
-                    AddAssetModel(asset.Name);
+                    if (lia.Type == AssetTypes.MODEL)
+                    {
+                        Models model = new(
+                            m_game,
+                            lia.Name,
+                            "DefaultTexture",
+                            "DefaultEffect",
+                            Vector3.Zero,
+                            1.0f);
+
+                        m_game.Project.CurrentLevel.AddModel(model);
+
+                        // New code from page 14
+                        listBoxLevel.Items.Add(
+                            new ListItemLevel() { Model = model });
+                    }
+                    else if (lia.Type == AssetTypes.TEXTURE)
+                    {
+                        m_dropped?.SetTexture(m_game, lia.Name);
+                    }
+                    else if (lia.Type == AssetTypes.EFFECT)
+                    {
+                        m_dropped?.SetShader(m_game, lia.Name);
+                    }
                 }
-                else if (asset.Type == AssetTypes.TEXTURE)
+                catch (Exception ex)
                 {
-                    m_dropped?.SetTexture(Game, asset.Name);
+                    MessageBox.Show(
+                        "Could not apply asset:\n\n" + ex.Message);
                 }
-                else if (asset.Type == AssetTypes.EFFECT)
+                finally
                 {
-                    m_dropped?.SetShader(Game, asset.Name);
+                    m_dropped = null;
                 }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(
-                    "Could not apply asset:\n\n" + ex.Message);
-            }
-            finally
-            {
-                m_dropped = null;
             }
         }
+
 
         private void AddAssetModel(string modelName)
         {
@@ -545,6 +551,16 @@ namespace GUI.Editor
         private void listBoxAssets_SelectedIndexChanged(
             object sender, EventArgs e)
         {
+        }
+
+        private void listBoxLevel_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (listBoxLevel.Items.Count == 0) return;
+            Game.Project.CurrentLevel.ClearSelectedModels();
+            int index = listBoxLevel.SelectedIndex;
+            if (index == -1) return;
+            var lia = listBoxLevel.Items[index] as ListItemLevel;
+            lia.Model.Selected = true;
         }
     }
 }

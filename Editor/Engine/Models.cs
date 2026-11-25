@@ -30,7 +30,7 @@ namespace Editor.Engine
 
         private ContentManager m_content;
         private GameEditor m_game;
-
+        public string Name { get; set; }
         public static bool SelectedDirty { get; set; } = false;
 
         public event PropertyChangedEventHandler PropertyChanged;
@@ -66,7 +66,7 @@ namespace Editor.Engine
 
             Mesh = m_content.Load<Model>(_model);
             Mesh.Tag = _model;
-
+            Name = _model;
             Material = new Material();
 
             SetTexture(game, _texture);

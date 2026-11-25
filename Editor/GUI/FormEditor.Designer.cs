@@ -46,14 +46,26 @@
             statusStrip1 = new System.Windows.Forms.StatusStrip();
             toolStripStatusLabel1 = new System.Windows.Forms.ToolStripStatusLabel();
             splitContainer = new System.Windows.Forms.SplitContainer();
+            splitContainer1 = new System.Windows.Forms.SplitContainer();
+            splitContainer2 = new System.Windows.Forms.SplitContainer();
+            listBoxLevel = new System.Windows.Forms.ListBox();
+            listBoxPrefabs = new System.Windows.Forms.ListBox();
             splitContainerAssets = new System.Windows.Forms.SplitContainer();
             propertyGrid = new System.Windows.Forms.PropertyGrid();
             listBoxAssets = new System.Windows.Forms.ListBox();
             menuStrip1.SuspendLayout();
             statusStrip1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)splitContainer).BeginInit();
+            splitContainer.Panel1.SuspendLayout();
             splitContainer.Panel2.SuspendLayout();
             splitContainer.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)splitContainer1).BeginInit();
+            splitContainer1.Panel1.SuspendLayout();
+            splitContainer1.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)splitContainer2).BeginInit();
+            splitContainer2.Panel1.SuspendLayout();
+            splitContainer2.Panel2.SuspendLayout();
+            splitContainer2.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)splitContainerAssets).BeginInit();
             splitContainerAssets.Panel1.SuspendLayout();
             splitContainerAssets.Panel2.SuspendLayout();
@@ -66,7 +78,7 @@
             menuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] { fileToolStripMenuItem1, assetsToolStripMenuItem });
             menuStrip1.Location = new System.Drawing.Point(0, 0);
             menuStrip1.Name = "menuStrip1";
-            menuStrip1.Size = new System.Drawing.Size(1292, 28);
+            menuStrip1.Size = new System.Drawing.Size(1432, 28);
             menuStrip1.TabIndex = 0;
             menuStrip1.Text = "menuStrip1";
             // 
@@ -166,9 +178,9 @@
             // 
             statusStrip1.ImageScalingSize = new System.Drawing.Size(20, 20);
             statusStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] { toolStripStatusLabel1 });
-            statusStrip1.Location = new System.Drawing.Point(0, 501);
+            statusStrip1.Location = new System.Drawing.Point(0, 630);
             statusStrip1.Name = "statusStrip1";
-            statusStrip1.Size = new System.Drawing.Size(1292, 26);
+            statusStrip1.Size = new System.Drawing.Size(1432, 26);
             statusStrip1.TabIndex = 1;
             statusStrip1.Text = "statusStrip1";
             // 
@@ -186,15 +198,66 @@
             // 
             // splitContainer.Panel1
             // 
+            splitContainer.Panel1.Controls.Add(splitContainer1);
             splitContainer.Panel1.SizeChanged += splitContainer_Panel1_SizeChanged;
             splitContainer.Panel1.Paint += splitContainer_Panel1_Paint;
             // 
             // splitContainer.Panel2
             // 
             splitContainer.Panel2.Controls.Add(splitContainerAssets);
-            splitContainer.Size = new System.Drawing.Size(1292, 473);
-            splitContainer.SplitterDistance = 946;
+            splitContainer.Size = new System.Drawing.Size(1432, 602);
+            splitContainer.SplitterDistance = 1048;
             splitContainer.TabIndex = 2;
+            // 
+            // splitContainer1
+            // 
+            splitContainer1.Dock = System.Windows.Forms.DockStyle.Fill;
+            splitContainer1.Location = new System.Drawing.Point(0, 0);
+            splitContainer1.Name = "splitContainer1";
+            // 
+            // splitContainer1.Panel1
+            // 
+            splitContainer1.Panel1.Controls.Add(splitContainer2);
+            splitContainer1.Size = new System.Drawing.Size(1048, 602);
+            splitContainer1.SplitterDistance = 266;
+            splitContainer1.TabIndex = 0;
+            // 
+            // splitContainer2
+            // 
+            splitContainer2.Dock = System.Windows.Forms.DockStyle.Fill;
+            splitContainer2.Location = new System.Drawing.Point(0, 0);
+            splitContainer2.Name = "splitContainer2";
+            splitContainer2.Orientation = System.Windows.Forms.Orientation.Horizontal;
+            // 
+            // splitContainer2.Panel1
+            // 
+            splitContainer2.Panel1.Controls.Add(listBoxLevel);
+            // 
+            // splitContainer2.Panel2
+            // 
+            splitContainer2.Panel2.Controls.Add(listBoxPrefabs);
+            splitContainer2.Size = new System.Drawing.Size(266, 602);
+            splitContainer2.SplitterDistance = 277;
+            splitContainer2.TabIndex = 0;
+            // 
+            // listBoxLevel
+            // 
+            listBoxLevel.Dock = System.Windows.Forms.DockStyle.Fill;
+            listBoxLevel.FormattingEnabled = true;
+            listBoxLevel.Location = new System.Drawing.Point(0, 0);
+            listBoxLevel.Name = "listBoxLevel";
+            listBoxLevel.Size = new System.Drawing.Size(266, 277);
+            listBoxLevel.TabIndex = 1;
+            listBoxLevel.SelectedIndexChanged += listBoxLevel_SelectedIndexChanged;
+            // 
+            // listBoxPrefabs
+            // 
+            listBoxPrefabs.Dock = System.Windows.Forms.DockStyle.Fill;
+            listBoxPrefabs.FormattingEnabled = true;
+            listBoxPrefabs.Location = new System.Drawing.Point(0, 0);
+            listBoxPrefabs.Name = "listBoxPrefabs";
+            listBoxPrefabs.Size = new System.Drawing.Size(266, 321);
+            listBoxPrefabs.TabIndex = 1;
             // 
             // splitContainerAssets
             // 
@@ -210,8 +273,8 @@
             // splitContainerAssets.Panel2
             // 
             splitContainerAssets.Panel2.Controls.Add(listBoxAssets);
-            splitContainerAssets.Size = new System.Drawing.Size(342, 473);
-            splitContainerAssets.SplitterDistance = 299;
+            splitContainerAssets.Size = new System.Drawing.Size(380, 602);
+            splitContainerAssets.SplitterDistance = 380;
             splitContainerAssets.TabIndex = 1;
             // 
             // propertyGrid
@@ -220,7 +283,7 @@
             propertyGrid.Dock = System.Windows.Forms.DockStyle.Fill;
             propertyGrid.Location = new System.Drawing.Point(0, 0);
             propertyGrid.Name = "propertyGrid";
-            propertyGrid.Size = new System.Drawing.Size(342, 299);
+            propertyGrid.Size = new System.Drawing.Size(380, 380);
             propertyGrid.TabIndex = 1;
             // 
             // listBoxAssets
@@ -229,7 +292,7 @@
             listBoxAssets.FormattingEnabled = true;
             listBoxAssets.Location = new System.Drawing.Point(0, 0);
             listBoxAssets.Name = "listBoxAssets";
-            listBoxAssets.Size = new System.Drawing.Size(342, 170);
+            listBoxAssets.Size = new System.Drawing.Size(380, 218);
             listBoxAssets.TabIndex = 0;
             listBoxAssets.SelectedIndexChanged += listBoxAssets_SelectedIndexChanged;
             listBoxAssets.DoubleClick += listBoxAssets_DoubleClick;
@@ -238,7 +301,7 @@
             // 
             AutoScaleDimensions = new System.Drawing.SizeF(8F, 20F);
             AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            ClientSize = new System.Drawing.Size(1292, 527);
+            ClientSize = new System.Drawing.Size(1432, 656);
             Controls.Add(splitContainer);
             Controls.Add(statusStrip1);
             Controls.Add(menuStrip1);
@@ -251,9 +314,17 @@
             menuStrip1.PerformLayout();
             statusStrip1.ResumeLayout(false);
             statusStrip1.PerformLayout();
+            splitContainer.Panel1.ResumeLayout(false);
             splitContainer.Panel2.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)splitContainer).EndInit();
             splitContainer.ResumeLayout(false);
+            splitContainer1.Panel1.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)splitContainer1).EndInit();
+            splitContainer1.ResumeLayout(false);
+            splitContainer2.Panel1.ResumeLayout(false);
+            splitContainer2.Panel2.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)splitContainer2).EndInit();
+            splitContainer2.ResumeLayout(false);
             splitContainerAssets.Panel1.ResumeLayout(false);
             splitContainerAssets.Panel2.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)splitContainerAssets).EndInit();
@@ -267,7 +338,7 @@
         private System.Windows.Forms.MenuStrip menuStrip1;
         private System.Windows.Forms.ToolStripMenuItem fileToolStripMenuItem;
         private System.Windows.Forms.StatusStrip statusStrip1;
-        public System.Windows.Forms.SplitContainer splitContainer;
+        private System.Windows.Forms.SplitContainer splitContainer;
         private System.Windows.Forms.ToolStripStatusLabel toolStripStatusLabel1;
         private System.Windows.Forms.ToolStripMenuItem projectToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem createToolStripMenuItem;
@@ -285,5 +356,9 @@
         private System.Windows.Forms.ListBox listBoxAssets;
         private System.Windows.Forms.ToolStripMenuItem assetsToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem importToolStripMenuItem;
+        public System.Windows.Forms.SplitContainer splitContainer1;
+        private System.Windows.Forms.SplitContainer splitContainer2;
+        public System.Windows.Forms.ListBox listBoxLevel;
+        private System.Windows.Forms.ListBox listBoxPrefabs;
     }
 }   
